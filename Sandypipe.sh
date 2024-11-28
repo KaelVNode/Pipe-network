@@ -111,15 +111,6 @@ while true; do
     fi
 done
 
-# Generate wallet menggunakan pipe-tool
-echo "Membuat wallet baru..."
-/opt/dcdn/pipe-tool generate-wallet --node-registry-url="https://rpc.pipedev.network"
-if [[ $? -ne 0 ]]; then
-    echo "Error: Gagal membuat wallet."
-    exit 1
-fi
-echo "Wallet berhasil dibuat."
-
 # Menautkan dompet menggunakan pipe-tool
 echo "Menautkan dompet..."
 /opt/dcdn/pipe-tool link-wallet --node-registry-url="https://rpc.pipedev.network"
@@ -128,6 +119,15 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 echo "Dompet berhasil ditautkan."
+
+# Generate wallet menggunakan pipe-tool
+echo "Membuat wallet baru..."
+/opt/dcdn/pipe-tool generate-wallet --node-registry-url="https://rpc.pipedev.network"
+if [[ $? -ne 0 ]]; then
+    echo "Error: Gagal membuat wallet."
+    exit 1
+fi
+echo "Wallet berhasil dibuat."
 
 # Restart layanan untuk memastikan semua pengaturan diterapkan
 sudo systemctl restart dcdnd
