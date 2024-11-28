@@ -1,66 +1,26 @@
-#!/bin/bash
+#!bin/bash
+read -p "Masukan Link Pipe tool Binary: " PIPE
+read -p "Masukan Link Node Binary: " BINARY
 
-# Menampilkan ASCII art untuk "Saandy"
-echo "  ██████ ▄▄▄     ▄▄▄      ███▄    █▓█████▓██   ██▓"
-echo "▒██    ▒▒████▄  ▒████▄    ██ ▀█   █▒██▀ ██▒██  ██▒"
-echo "░ ▓██▄  ▒██  ▀█▄▒██  ▀█▄ ▓██  ▀█ ██░██   █▌▒██ ██░"
-echo "  ▒   ██░██▄▄▄▄█░██▄▄▄▄██▓██▒  ▐▌██░▓█▄   ▌░ ▐██▓░"
-echo "▒██████▒▒▓█   ▓██▓█   ▓██▒██░   ▓██░▒████▓ ░ ██▒▓░"
-echo "▒ ▒▓▒ ▒ ░▒▒   ▓▒█▒▒   ▓▒█░ ▒░   ▒ ▒ ▒▒▓  ▒  ██▒▒▒ "
-echo "░ ░▒  ░ ░ ▒   ▒▒ ░▒   ▒▒ ░ ░░   ░ ▒░░ ▒  ▒▓██ ░▒░ "
-echo "░  ░  ░   ░   ▒   ░   ▒     ░   ░ ░ ░ ░  ░▒ ▒ ░░  "
-echo "      ░       ░  ░    ░  ░        ░   ░   ░ ░     "
-echo "                                    ░     ░ ░     "
-echo
-
-# Meminta input dari pengguna
-read -p "Masukkan Link Pipe Tool Binary: " PIPE
-read -p "Masukkan Link Node Binary: " BINARY
-
-# Mengecek apakah URL diisi
-if [[ -z "$PIPE" || -z "$BINARY" ]]; then
-    echo "Error: Link Pipe Tool dan Node Binary harus diisi!"
-    exit 1
-fi
-
-# Membuat direktori jika belum ada
 sudo mkdir -p /opt/dcdn
 
-# Mengunduh file biner
 sudo curl -L "$PIPE" -o /opt/dcdn/pipe-tool
-if [[ $? -ne 0 ]]; then
-    echo "Error: Gagal mengunduh pipe-tool dari $PIPE"
-    exit 1
-fi
 
 sudo curl -L "$BINARY" -o /opt/dcdn/dcdnd
-if [[ $? -ne 0 ]]; then
-    echo "Error: Gagal mengunduh dcdnd dari $BINARY"
-    exit 1
-fi
 
-# Memberikan izin eksekusi pada file biner
 sudo chmod +x /opt/dcdn/pipe-tool
+
 sudo chmod +x /opt/dcdn/dcdnd
 
-# Generate token registrasi menggunakan pipe-tool
-echo "Membuat token registrasi..."
-/opt/dcdn/pipe-tool generate-registration-token --node-registry-url="https://rpc.pipedev.network"
-if [[ $? -ne 0 ]]; then
-    echo "Error: Gagal membuat token registrasi."
-    exit 1
-fi
-echo "Token registrasi berhasil dibuat."
-
-# Membuat file service untuk systemd
-echo "Membuat file service..."
-sudo tee /etc/systemd/system/dcdnd.service > /dev/null << 'EOF'
+# Create service file using cat
+sudo cat > /etc/systemd/system/dcdnd.service << 'EOF'
 [Unit]
 Description=DCDN Node Service
 After=network.target
 Wants=network-online.target
 
 [Service]
+# Path to the executable and its arguments
 ExecStart=/opt/dcdn/dcdnd \
                 --grpc-server-url=0.0.0.0:8002 \
                 --http-server-url=0.0.0.0:8003 \
@@ -69,75 +29,37 @@ ExecStart=/opt/dcdn/dcdnd \
                 --credentials-dir=/root/.permissionless \
                 --allow-origin=*
 
+# Restart policy
 Restart=always
 RestartSec=5
+
+# Resource and file descriptor limits
 LimitNOFILE=65536
 LimitNPROC=4096
 
+# Logging
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=dcdn-node
 
+
+# Working directory
 WorkingDirectory=/opt/dcdn
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# Reload systemd, enable, dan mulai service
+/opt/dcdn/pipe-tool generate-registration-token --node-registry-url="https://rpc.pipedev.network"
+
 sudo systemctl daemon-reload
 sudo systemctl enable dcdnd
 sudo systemctl start dcdnd
-echo "Service Node berhasil dimulai."
 
-# Login menggunakan pipe-tool dan menampilkan QR code
-echo "Silakan pindai QR code yang ditampilkan untuk melanjutkan login."
 /opt/dcdn/pipe-tool login --node-registry-url="https://rpc.pipedev.network"
-if [[ $? -ne 0 ]]; then
-    echo "Error: Gagal login ke registry."
-    exit 1
-fi
 
-# Verifikasi login berhasil
-echo "Finalizing login..."
-while true; do
-    LOGIN_SUCCESS=$( /opt/dcdn/pipe-tool list-nodes --node-registry-url="https://rpc.pipedev.network" 2>&1 )
-    if [[ "$LOGIN_SUCCESS" =~ "User registered successfully" || "$LOGIN_SUCCESS" =~ "Logged in successfully" ]]; then
-        echo "Login berhasil!"
-        break
-    else
-        echo "Menunggu login selesai... (Coba lagi dalam 5 detik)"
-        sleep 5
-    fi
-done
-
-# Menautkan dompet menggunakan pipe-tool
-echo "Menautkan dompet..."
 /opt/dcdn/pipe-tool link-wallet --node-registry-url="https://rpc.pipedev.network"
-if [[ $? -ne 0 ]]; then
-    echo "Error: Gagal menautkan dompet."
-    exit 1
-fi
-echo "Dompet berhasil ditautkan."
 
-# Generate wallet menggunakan pipe-tool
-echo "Membuat wallet baru..."
-/opt/dcdn/pipe-tool generate-wallet --node-registry-url="https://rpc.pipedev.network"
-if [[ $? -ne 0 ]]; then
-    echo "Error: Gagal membuat wallet."
-    exit 1
-fi
-echo "Wallet berhasil dibuat."
-
-# Restart layanan untuk memastikan semua pengaturan diterapkan
 sudo systemctl restart dcdnd
 
-# Menampilkan daftar node yang terdaftar
-echo "Menampilkan daftar node yang terdaftar..."
 /opt/dcdn/pipe-tool list-nodes --node-registry-url="https://rpc.pipedev.network"
-if [[ $? -ne 0 ]]; then
-    echo "Error: Gagal mendapatkan daftar node."
-    exit 1
-fi
-
-echo "Skrip selesai dengan sukses!"
