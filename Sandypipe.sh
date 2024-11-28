@@ -89,7 +89,7 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
-# Tunggu hingga pengguna selesai login
+# Tunggu hingga login selesai
 echo "Menunggu hingga login selesai..."
 while ! /opt/dcdn/pipe-tool list-nodes --node-registry-url="https://rpc.pipedev.network" &> /dev/null; do
     sleep 5
@@ -103,6 +103,15 @@ if [[ $? -ne 0 ]]; then
     echo "Error: Gagal menautkan dompet."
     exit 1
 fi
+
+# Generate wallet menggunakan pipe-tool
+echo "Membuat wallet baru..."
+/opt/dcdn/pipe-tool generate-wallet --node-registry-url="https://rpc.pipedev.network"
+if [[ $? -ne 0 ]]; then
+    echo "Error: Gagal membuat wallet."
+    exit 1
+fi
+echo "Wallet berhasil dibuat."
 
 # Reload systemd, enable, dan mulai service
 sudo systemctl daemon-reload
