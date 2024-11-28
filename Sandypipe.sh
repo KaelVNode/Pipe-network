@@ -1,5 +1,25 @@
 #!/bin/bash
 
+# Menampilkan ASCII Art untuk "Saandy"
+echo "  ██████ ▄▄▄     ▄▄▄      ███▄    █▓█████▓██   ██▓"
+echo "▒██    ▒▒████▄  ▒████▄    ██ ▀█   █▒██▀ ██▒██  ██▒"
+echo "░ ▓██▄  ▒██  ▀█▄▒██  ▀█▄ ▓██  ▀█ ██░██   █▌▒██ ██░"
+echo "  ▒   ██░██▄▄▄▄█░██▄▄▄▄██▓██▒  ▐▌██░▓█▄   ▌░ ▐██▓░"
+echo "▒██████▒▒▓█   ▓██▓█   ▓██▒██░   ▓██░▒████▓ ░ ██▒▓░"
+echo "▒ ▒▓▒ ▒ ░▒▒   ▓▒█▒▒   ▓▒█░ ▒░   ▒ ▒ ▒▒▓  ▒  ██▒▒▒ "
+echo "░ ░▒  ░ ░ ▒   ▒▒ ░▒   ▒▒ ░ ░░   ░ ▒░░ ▒  ▒▓██ ░▒░ "
+echo "░  ░  ░   ░   ▒   ░   ▒     ░   ░ ░ ░ ░  ░▒ ▒ ░░  "
+echo "      ░       ░  ░    ░  ░        ░   ░   ░ ░     "
+echo "                                    ░     ░ ░     "
+echo "                                                   "
+echo "                                                   "
+echo "                                                   "
+echo "                                                   "
+echo "                                                   "
+echo "                                                   "
+echo "                                                   "
+echo "                                                   "
+
 # Meminta input link binary pipe-tool dan dcdnd
 read -p "Masukan Link Pipe tool Binary: " PIPE
 read -p "Masukan Link Node Binary: " BINARY
