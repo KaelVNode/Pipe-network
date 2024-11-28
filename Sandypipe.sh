@@ -75,6 +75,7 @@ WantedBy=multi-user.target
 EOF
 
 # Generate token registrasi menggunakan pipe-tool
+echo "Membuat token registrasi..."
 /opt/dcdn/pipe-tool generate-registration-token --node-registry-url="https://rpc.pipedev.network"
 if [[ $? -ne 0 ]]; then
     echo "Error: Gagal membuat token registrasi."
@@ -89,20 +90,18 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
-# Tunggu hingga login selesai
-echo "Menunggu hingga login selesai..."
-while ! /opt/dcdn/pipe-tool list-nodes --node-registry-url="https://rpc.pipedev.network" &> /dev/null; do
-    sleep 5
-    echo "Menunggu login selesai... (Coba lagi dalam 5 detik)"
+# Verifikasi login berhasil
+echo "Finalizing login..."
+while true; do
+    LOGIN_SUCCESS=$( /opt/dcdn/pipe-tool list-nodes --node-registry-url="https://rpc.pipedev.network" 2>&1 )
+    if [[ "$LOGIN_SUCCESS" =~ "User registered successfully" || "$LOGIN_SUCCESS" =~ "Logged in successfully" ]]; then
+        echo "Login berhasil!"
+        break
+    else
+        echo "Menunggu login selesai... (Coba lagi dalam 5 detik)"
+        sleep 5
+    fi
 done
-echo "Login berhasil."
-
-# Menautkan dompet menggunakan pipe-tool
-/opt/dcdn/pipe-tool link-wallet --node-registry-url="https://rpc.pipedev.network"
-if [[ $? -ne 0 ]]; then
-    echo "Error: Gagal menautkan dompet."
-    exit 1
-fi
 
 # Generate wallet menggunakan pipe-tool
 echo "Membuat wallet baru..."
@@ -113,6 +112,15 @@ if [[ $? -ne 0 ]]; then
 fi
 echo "Wallet berhasil dibuat."
 
+# Menautkan dompet menggunakan pipe-tool
+echo "Menautkan dompet..."
+/opt/dcdn/pipe-tool link-wallet --node-registry-url="https://rpc.pipedev.network"
+if [[ $? -ne 0 ]]; then
+    echo "Error: Gagal menautkan dompet."
+    exit 1
+fi
+echo "Dompet berhasil ditautkan."
+
 # Reload systemd, enable, dan mulai service
 sudo systemctl daemon-reload
 sudo systemctl enable dcdnd
@@ -122,8 +130,5 @@ sudo systemctl start dcdnd
 sudo systemctl restart dcdnd
 
 # Menampilkan daftar node yang terdaftar
+echo "Menampilkan daftar node yang terdaftar..."
 /opt/dcdn/pipe-tool list-nodes --node-registry-url="https://rpc.pipedev.network"
-if [[ $? -ne 0 ]]; then
-    echo "Error: Gagal mendapatkan daftar node."
-    exit 1
-fi
