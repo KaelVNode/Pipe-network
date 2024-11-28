@@ -43,7 +43,17 @@ fi
 sudo chmod +x /opt/dcdn/pipe-tool
 sudo chmod +x /opt/dcdn/dcdnd
 
+# Generate token registrasi menggunakan pipe-tool
+echo "Membuat token registrasi..."
+/opt/dcdn/pipe-tool generate-registration-token --node-registry-url="https://rpc.pipedev.network"
+if [[ $? -ne 0 ]]; then
+    echo "Error: Gagal membuat token registrasi."
+    exit 1
+fi
+echo "Token registrasi berhasil dibuat."
+
 # Membuat file service untuk systemd
+echo "Membuat file service..."
 sudo tee /etc/systemd/system/dcdnd.service > /dev/null << 'EOF'
 [Unit]
 Description=DCDN Node Service
@@ -74,13 +84,11 @@ WorkingDirectory=/opt/dcdn
 WantedBy=multi-user.target
 EOF
 
-# Generate token registrasi menggunakan pipe-tool
-echo "Membuat token registrasi..."
-/opt/dcdn/pipe-tool generate-registration-token --node-registry-url="https://rpc.pipedev.network"
-if [[ $? -ne 0 ]]; then
-    echo "Error: Gagal membuat token registrasi."
-    exit 1
-fi
+# Reload systemd, enable, dan mulai service
+sudo systemctl daemon-reload
+sudo systemctl enable dcdnd
+sudo systemctl start dcdnd
+echo "Service Node berhasil dimulai."
 
 # Login menggunakan pipe-tool dan menampilkan QR code
 echo "Silakan pindai QR code yang ditampilkan untuk melanjutkan login."
@@ -121,14 +129,15 @@ if [[ $? -ne 0 ]]; then
 fi
 echo "Dompet berhasil ditautkan."
 
-# Reload systemd, enable, dan mulai service
-sudo systemctl daemon-reload
-sudo systemctl enable dcdnd
-sudo systemctl start dcdnd
-
 # Restart layanan untuk memastikan semua pengaturan diterapkan
 sudo systemctl restart dcdnd
 
 # Menampilkan daftar node yang terdaftar
 echo "Menampilkan daftar node yang terdaftar..."
 /opt/dcdn/pipe-tool list-nodes --node-registry-url="https://rpc.pipedev.network"
+if [[ $? -ne 0 ]]; then
+    echo "Error: Gagal mendapatkan daftar node."
+    exit 1
+fi
+
+echo "Skrip selesai dengan sukses!"
