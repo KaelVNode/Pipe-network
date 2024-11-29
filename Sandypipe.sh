@@ -1,104 +1,88 @@
 #!/bin/bash
 
 # Menampilkan ASCII Art untuk "Saandy"
-echo "  ██████ ▄▄▄     ▄▄▄      ███▄    █▓█████▓██   ██▓"
-echo "▒██    ▒▒████▄  ▒████▄    ██ ▀█   █▒██▀ ██▒██  ██▒"
-echo "░ ▓██▄  ▒██  ▀█▄▒██  ▀█▄ ▓██  ▀█ ██░██   █▌▒██ ██░"
-echo "  ▒   ██░██▄▄▄▄█░██▄▄▄▄██▓██▒  ▐▌██░▓█▄   ▌░ ▐██▓░"
-echo "▒██████▒▒▓█   ▓██▓█   ▓██▒██░   ▓██░▒████▓ ░ ██▒▓░"
-echo "▒ ▒▓▒ ▒ ░▒▒   ▓▒█▒▒   ▓▒█░ ▒░   ▒ ▒ ▒▒▓  ▒  ██▒▒▒ "
-echo "░ ░▒  ░ ░ ▒   ▒▒ ░▒   ▒▒ ░ ░░   ░ ▒░░ ▒  ▒▓██ ░▒░ "
-echo "░  ░  ░   ░   ▒   ░   ▒     ░   ░ ░ ░ ░  ░▒ ▒ ░░  "
-echo "      ░       ░  ░    ░  ░        ░   ░   ░ ░     "
-echo "                                    ░     ░ ░     "
-echo "                                                   "
-echo "                                                   "
-echo "                                                   "
-echo "                                                   "
-echo "                                                   "
-echo "                                                   "
-echo "                                                   "
-echo "                                                   "
+echo "
+  ██████ ▄▄▄     ▄▄▄      ███▄    █▓█████▓██   ██▓
+▒██    ▒▒████▄  ▒████▄    ██ ▀█   █▒██▀ ██▒██  ██▒
+░ ▓██▄  ▒██  ▀█▄▒██  ▀█▄ ▓██  ▀█ ██░██   █▌▒██ ██░
+  ▒   ██░██▄▄▄▄█░██▄▄▄▄██▓██▒  ▐▌██░▓█▄   ▌░ ▐██▓░
+▒██████▒▒▓█   ▓██▓█   ▓██▒██░   ▓██░▒████▓ ░ ██▒▓░
+▒ ▒▓▒ ▒ ░▒▒   ▓▒█▒▒   ▓▒█░ ▒░   ▒ ▒ ▒▒▓  ▒  ██▒▒▒ 
+░ ░▒  ░ ░ ▒   ▒▒ ░▒   ▒▒ ░ ░░   ░ ▒░░ ▒  ▒▓██ ░▒░ 
+░  ░  ░   ░   ▒   ░   ▒     ░   ░ ░ ░ ░  ░▒ ▒ ░░  
+      ░       ░  ░    ░  ░        ░   ░   ░ ░     
+                                    ░     ░ ░     
+"
 
-# Meminta input link binary pipe-tool dan dcdnd
-read -p "Masukan Link Pipe tool Binary: " PIPE
-read -p "Masukan Link Node Binary: " BINARY
+# Meminta input URL
+read -p "Masukkan PIPE-URL: " PIPE_URL
+read -p "Masukkan DCDND-URL: " DCDND_URL
 
-# Membuat direktori /opt/dcdn jika belum ada
+# 1. Membuat direktori
 sudo mkdir -p /opt/dcdn
 
-# Mengunduh binary pipe-tool dan dcdnd
-echo "Mengunduh pipe-tool..."
-sudo curl -L "$PIPE" -o /opt/dcdn/pipe-tool || { echo "Gagal mengunduh pipe-tool"; exit 1; }
+# 2. Mengunduh binary Pipe tool dari URL
+sudo curl -L "$PIPE_URL" -o /opt/dcdn/pipe-tool
 
-echo "Mengunduh dcdnd..."
-sudo curl -L "$BINARY" -o /opt/dcdn/dcdnd || { echo "Gagal mengunduh dcdnd"; exit 1; }
+# 3. Mengunduh binary Node dari URL
+sudo curl -L "$DCDND_URL" -o /opt/dcdn/dcdnd
 
-# Memberikan izin eksekusi pada binary
-echo "Memberikan izin eksekusi pada binary..."
+# 4. Membuat binary dapat dieksekusi
 sudo chmod +x /opt/dcdn/pipe-tool
 sudo chmod +x /opt/dcdn/dcdnd
 
-# Membuat file service systemd untuk dcdnd
-echo "Membuat file service systemd untuk dcdnd..."
-sudo tee /etc/systemd/system/dcdnd.service > /dev/null << 'EOF'
+# 5. Login untuk menghasilkan token akses
+echo "Silakan login untuk menghasilkan token akses. Ikuti instruksi di bawah ini:"
+/opt/dcdn/pipe-tool login --node-registry-url="https://rpc.pipedev.network"
+echo "Login selesai. Silakan lanjut ke langkah berikutnya."
+
+# 6. Menghasilkan token pendaftaran
+/opt/dcdn/pipe-tool generate-registration-token --node-registry-url="https://rpc.pipedev.network"
+
+# 7. Membuat file service
+sudo bash -c 'cat > /etc/systemd/system/dcdnd.service << EOF
 [Unit]
 Description=DCDN Node Service
 After=network.target
 Wants=network-online.target
 
 [Service]
-# Path ke executable dan argumen
-ExecStart=/opt/dcdn/dcdnd \
-                --grpc-server-url=0.0.0.0:8002 \
-                --http-server-url=0.0.0.0:8003 \
-                --node-registry-url="https://rpc.pipedev.network" \
-                --cache-max-capacity-mb=1024 \
-                --credentials-dir=/root/.permissionless \
+ExecStart=/opt/dcdn/dcdnd \\
+                --grpc-server-url=0.0.0.0:8002 \\
+                --http-server-url=0.0.0.0:8003 \\
+                --node-registry-url="https://rpc.pipedev.network" \\
+                --cache-max-capacity-mb=1024 \\
+                --credentials-dir=/root/.permissionless \\
                 --allow-origin=*
 
-# Kebijakan restart
 Restart=always
 RestartSec=5
-
-# Batasan resource dan file descriptor
 LimitNOFILE=65536
 LimitNPROC=4096
 
-# Logging
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=dcdn-node
 
-# Direktori kerja
 WorkingDirectory=/opt/dcdn
 
 [Install]
 WantedBy=multi-user.target
-EOF
+EOF'
 
-# Menjalankan perintah pipe-tool untuk menghasilkan token registrasi
-echo "Menghasilkan token registrasi..."
-/opt/dcdn/pipe-tool generate-registration-token --node-registry-url="https://rpc.pipedev.network" || { echo "Gagal menghasilkan token registrasi"; exit 1; }
-
-# Memuat ulang systemd dan mengaktifkan service dcdnd
-echo "Memuat ulang systemd dan mengaktifkan service dcdnd..."
+# 8. Memulai Node
 sudo systemctl daemon-reload
 sudo systemctl enable dcdnd
 sudo systemctl start dcdnd
 
-# Melakukan login dengan pipe-tool
-echo "Login dengan pipe-tool..."
-/opt/dcdn/pipe-tool login --node-registry-url="https://rpc.pipedev.network" || { echo "Login gagal"; exit 1; }
+# 9. Menghasilkan dan mendaftar dompet
+echo "Menghasilkan dan mendaftar dompet..."
+/opt/dcdn/pipe-tool generate-wallet --node-registry-url="https://rpc.pipedev.network"
+echo "Simpan frasa dompet dan file keypair.json untuk cadangan."
+/opt/dcdn/pipe-tool link-wallet --node-registry-url="https://rpc.pipedev.network"
 
-# Menautkan wallet dengan pipe-tool
-echo "Menautkan wallet dengan pipe-tool..."
-/opt/dcdn/pipe-tool link-wallet --node-registry-url="https://rpc.pipedev.network" || { echo "Gagal menautkan wallet"; exit 1; }
-
-# Merestart service dcdnd setelah menautkan wallet
-echo "Merestart service dcdnd..."
-sudo systemctl restart dcdnd
-
-# Menampilkan daftar node yang terhubung
-echo "Daftar node yang terhubung..."
+# 10. Memeriksa status node
+echo "Memeriksa status node..."
 /opt/dcdn/pipe-tool list-nodes --node-registry-url="https://rpc.pipedev.network"
+
+echo "Skrip selesai."
