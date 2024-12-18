@@ -4,5 +4,6 @@ wget https://raw.githubusercontent.com/KaelVNode/Pipe-network/refs/heads/main/Sa
 Update
 
 ```
-wget https://raw.githubusercontent.com/KaelVNode/Pipe-network/refs/heads/main/Updatepipe.sh && Updatepipe.sh
+wget https://raw.githubusercontent.com/KaelVNode/Pipe-network/refs/heads/main/Updatepipe.sh && Updatepipe.sh && chmod +x Updatepipe.sh && ./Updatepipe.sh
+
 ```
