@@ -48,7 +48,3 @@ sudo systemctl start dcdnd
 
 # 9. Menginformasikan bahwa layanan dcdnd telah dimulai
 echo "Layanan dcdnd telah berhasil dimulai."
-
-# 10. Memeriksa status node
-echo "Memeriksa status node..."
-/opt/dcdn/pipe-tool list-nodes --node-registry-url="https://rpc.pipedev.network"
